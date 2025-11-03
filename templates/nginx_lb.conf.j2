@@ -1,0 +1,14 @@
+upstream backend {
+{% for server in backend_servers %}
+    server {{ server.ip }}:{{ listen_port }};
+{% endfor %}
+}
+
+server {
+    listen {{ listen_port }};
+    location / {
+        proxy_pass http://backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
