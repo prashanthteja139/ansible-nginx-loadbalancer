@@ -1,0 +1,42 @@
+---
+- name: Configure Nginx Load Balancer
+  hosts: loadbalancer
+  become: yes
+  vars:
+    backend_servers:
+      - { name: app1, ip: "192.168.1.101" }
+      - { name: app2, ip: "192.168.1.102" }
+    listen_port: 80
+
+  tasks:
+    - name: Install Nginx on Debian systems
+      apt:
+        name: nginx
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Install Nginx on RHEL systems
+      yum:
+        name: nginx
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: Deploy load balancer configuration
+      template:
+        src: templates/nginx_lb.conf.j2
+        dest: /etc/nginx/conf.d/load_balancer.conf
+      notify:
+        - restart nginx
+
+    - name: Ensure Nginx is running and enabled
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+
+  handlers:
+    - name: restart nginx
+      service:
+        name: nginx
+        state: restarted
